@@ -21,9 +21,10 @@ shinyServer(function(input, output,session) {
   })
   
   player.select <-reactive({
-    index1 = which((playerdata$FGA>0)==1)
+    #Filter the player data so that it does not choose a player who has no free throw attempts => no free throw %
+    index1 = which(((playerdata$FTA >= 1)*(playerdata$FTA<=1000))==1)
     playerdata2 = playerdata[index1,]
-    
+    #Randomly select a player if it is random
     decision = input$howToChoose
     if(decision == "rand"){
       s1 = playerdata2[sample(nrow(playerdata2), 1), ]
@@ -125,11 +126,26 @@ shinyServer(function(input, output,session) {
          xlab = "",
          xaxt = "n"
     )
-    abline(h = h2, col = "red")
-    abline(h = phat, col = "green")
+    abline(h = h2, col = "red", lwd = 3)
+    abline(h = phat, col = "green", lwd = 3)
 
   })
-  #PLOT for conditional panel
+  #
+  #
+  #     v
+  #     v
+  #     v
+  #     v
+  #
+  # PLOT for conditional panel
+  # A more efficient way to handle this would have been to create a reactive element for the checkbox and then use an if statement in the first plot function
+  #
+  #     ^
+  #     ^
+  #     ^
+  #     ^
+  #
+  #
   output$proportion2 <-renderPlot({
     h3<-h()
     namedata<-player.select()
@@ -157,9 +173,9 @@ shinyServer(function(input, output,session) {
          xlab = "",
          xaxt = "n"
     )
-    abline(h = h3, col = "red")
-    abline(h = phat, col = "green")
-    abline(h=ftp,col = "blue")
+    abline(h = h3, col = "red", lwd = 3)
+    abline(h = phat, col = "green", lwd = 3)
+    abline(h=ftp,col = "blue", lwd =3)
     
   })
   

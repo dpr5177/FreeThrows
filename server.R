@@ -189,12 +189,14 @@ shinyServer(function(input, output,session) {
          xlab = "",
          xaxt = "n"
     )
+
     abline(h = h3, col = "red", lwd = 3)
     abline(h = phat, col = "green", lwd = 3)
     abline(h=ftp,col = "blue", lwd =3)
     
   })
   
+  #Output the table of data. It is called a sample table but note that it is not a sample and is actually the entire population of NBA players in the 2016-17 season
   output$samp.table<- renderTable({
 
     sample1 <- playerdata

@@ -7,6 +7,8 @@ playerdata<-read.csv("NBA1617E.csv",header=TRUE)
 
 
 shinyServer(function(input, output,session) {
+  
+  #This is a reactive element for filtering the data in part 1 for the histogram
   dataFilter<- reactive({
     
     games<-input$gamesplayed
@@ -20,10 +22,13 @@ shinyServer(function(input, output,session) {
  
   })
   
+  #This is a reactive element for selecting a player based on the user's choices
+  # **Part of what can be modified to make plot function simpler
   player.select <-reactive({
     #Filter the player data so that it does not choose a player who has no free throw attempts => no free throw %
     index1 = which(((playerdata$FTA >= 1)*(playerdata$FTA<=1000))==1)
     playerdata2 = playerdata[index1,]
+    
     #Randomly select a player if it is random
     decision = input$howToChoose
     if(decision == "rand"){
@@ -34,41 +39,30 @@ shinyServer(function(input, output,session) {
       name = input$player
     }
     
+    #If it is not random use the player that the user selected
     index<-which(playerdata2$Player == name)
     namedata<-playerdata2[index,]
   })
   
+  #This is a reactive element for how many shots will be simulated
   n <- reactive({
     return(input$samp.size)
   })
   
+  #This is a reactive element for what the user chooses for the null value
   h <- reactive({
     return(input$null.val)
   })
 
+  #Output text for what the free throw percentage is for the player
   output$text1 <- renderText({
     namedata <-player.select()
     ftp = namedata$FT/namedata$FTA
 
-    paste("The free throw percentage for ",namedata$Player, "is",ftp)
+    paste("The free throw proportion for ",namedata$Player, "is",ftp)
   })
   
-  output$histogram<-renderPlot({
-    bballdata<-dataFilter()
-   
-    n = nrow(bballdata)
-    y = numeric(length = n)
-    #Produces NAN's for players that haven't taken any free throws
-    for(i in 1:n){
-      
-      y[i] = bballdata$FT[i]/bballdata$FTA[i]
-    }
-
-    
-    hist(y,xlab = "Free Throw Proportion",main = "Histogram of Free Throw Proportion")
-  })
-
-  
+  # Output text for the sample proportion
   output$text2 <- renderText({
     namedata<-player.select()
     ftp = namedata$FT/namedata$FTA
@@ -89,6 +83,7 @@ shinyServer(function(input, output,session) {
     paste("The sample proportion of shots made is  ", phat)
   })
   
+  #Output text for the null hypothesis
   output$text3 <- renderText({
     namedata <-player.select()
     h1 <- h()
@@ -97,6 +92,27 @@ shinyServer(function(input, output,session) {
     
   })
   
+  #Output the histogram in Part 1 
+  output$histogram<-renderPlot({
+    bballdata<-dataFilter()
+   
+    n = nrow(bballdata)
+    y = numeric(length = n)
+    
+    #Calculates the free throw percentages for all the players and puts it into a variable
+    #Produces NAN's for players that haven't taken any free throws
+    #Doesn't matter for the Histogram though because the Histogram won't display the NaN's 
+    #I take out the NaN's in a different part where it is needed
+    for(i in 1:n){
+      
+      y[i] = bballdata$FT[i]/bballdata$FTA[i]
+    }
+
+    #The actual histogram
+    hist(y,xlab = "Free Throw Proportion",main = "Histogram of Free Throw Proportion")
+  })
+
+
   
   #output the plot for the proportion of free throws made
   output$proportion <-renderPlot({

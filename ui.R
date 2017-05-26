@@ -103,7 +103,7 @@ dashboardPage(skin="blue",
                                    #Conditional based on how the user would like to select a player for the hypothesis test
                                    selectInput(inputId = "howToChoose","Would you like to choose a random player or select your own", choices = c(Random = "rand", Select = "sel")),
                                    conditionalPanel("input.howToChoose == 'sel'",
-                                                    selectizeInput(inputId = "player","Select your player from the drop down list below:", choices=PlayerNames, multiple=FALSE, options = list(placeholder = 'Select Your Player'))
+                                                    selectizeInput(inputId = "player","Select your player from the drop down list below:", choices=PlayerNames, multiple=FALSE, options = list(placeholder = 'Select Your Player'),selected = NULL)
                                                     ),
                                    
                                    #The H0 value the user would like to test against

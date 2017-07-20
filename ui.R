@@ -12,8 +12,6 @@ playerdata2 = playerdata[index1,]
 PlayerNames<-playerdata2[,1]
 
 dashboardPage(skin="blue",
-              
-              #Title
               dashboardHeader(title="Hypothesis Testing with NBA data",titleWidth=450),
               
               #Sidebar
@@ -22,9 +20,9 @@ dashboardPage(skin="blue",
                 sidebarMenu(
                   
                   menuItem("Overview", tabName = "over", icon = icon("university")),
-                  menuItem("Part 1", tabName = "first", icon = icon("pencil-square")),
-                  menuItem("Part 2", tabName = "second", icon = icon("pencil-square")),
-                  menuItem("Table", tabName = "third", icon = icon("table"))
+                  menuItem("Part 1", tabName = "first", icon = icon("dribbble")),
+                  menuItem("Part 2", tabName = "second", icon = icon("dribbble")),
+                  menuItem("Table", tabName = "fourth", icon = icon("table"))
                 )),
               
               #Content within the tabs
@@ -36,9 +34,13 @@ dashboardPage(skin="blue",
                           fluidRow(
                             #column of length 12 which is the whole width
                             #I include everthing in a column though because this way there are margins and it looks better
-                            column(12,
-                                   h3("About"),
-                                   h4("In this app you will explore data about free throw percentage for NBA players in the 2016-17 season."),
+                            column(8,
+                                   h3("About:"),
+                                   h4("In this app the goal is to learn about the reasoning of a hypothesis test about proportions "),
+                                   h3("Background:"),
+                                   #In this app you will explore data about free throw percentage for NBA players in the 2016-17 season.
+                                   h4("This app includes 2016-2017 data for the NBA regular season"),
+                                   h3("Instructions:"),
                                    h4("In Part 1 you will look at the distribution of all the players free throw percentages."),
                                    h4("In Part 2 you will explore hypothesis tests about and individual player's free throw percentage"),
                                    
@@ -47,7 +49,6 @@ dashboardPage(skin="blue",
                                    img(src="fthrow2.png",height = 250,width =650,algin = "middle")
                                    
                             )
-                            
                             
                           )
                   ),
@@ -85,11 +86,11 @@ dashboardPage(skin="blue",
                             column(8,
                                    h1("Histogram"),
                                    
-                                   plotOutput("histogram")
+                                   plotOutput("histogramNBA")
                             ),
                             
                             #A box with information to get students thinking and transitioning into part 2
-                            box(width = 12,background = "blue", h4("Try to think about what the median and mean of FT% are and where what range you might expect most of the players to fall in. "))
+                            box(width = 12,background = "blue", h4("Try to think about what the median and mean of FT% are and what range you might expect most of the players to fall in. "))
                            
                           )
                           
@@ -98,66 +99,71 @@ dashboardPage(skin="blue",
                   #Define Content in tab 2
                   tabItem(tabName = "second",
                           fluidRow(
-                            
+                            column(12,
+                                   textOutput("text3NBA"),
+                                   tags$head(tags$style("#text3NBA{color: black;font-size: 30px;font-style: bold;}")),
+                                   br()
+                            )
+                          ),
+                          fluidRow(
+                            #This is a text output that displays what the hypothesis is they are testing and who the player is
                             column(4,
                                    #Conditional based on how the user would like to select a player for the hypothesis test
-                                   selectInput(inputId = "howToChoose","Would you like to choose a random player or select your own", choices = c(Random = "rand", Select = "sel")),
-                                   conditionalPanel("input.howToChoose == 'sel'",
+                                   selectInput(inputId = "howToChooseNBA","Would you like to choose a random player or select your own", choices = c(Random = "rand", Select = "sel")),
+                                   conditionalPanel("input.howToChooseNBA == 'sel'",
                                                     selectizeInput(inputId = "player","Select your player from the drop down list below:", choices=PlayerNames, multiple=FALSE, options = list(placeholder = 'Select Your Player'),selected = NULL)
-                                                    ),
+                                   ),
                                    
                                    #The H0 value the user would like to test against
-                                   numericInput("null.val","Select a value for the null hypothesis. ",min = 0,max = 1,value = 0.74, step = 0.01),
+                                   numericInput("null.valNBA","Select a value for the null hypothesis. ",min = 0,max = 1,value = 0.74, step = 0.01),
                                    
-                                   #This is a text output that displays what the hypothesis is they are testing and who the player is
-                                   textOutput("text3"),
                                    
                                    #User now selects what their sample size would be ie how many shots they are simulating for the player
                                    #simulates shots based on the players actual FT%
                                    h4("Simulate your player shooting free throws and guess whether or not we can reject the null hypothesis"),
-                                   numericInput("samp.size",h4("Input the number of shots in the sample:  " ),min = 0,max = 1000,value = 5, step = 5),
+                                   numericInput("samp.sizeNBA",h4("Input the number of shots in the sample:  " ),min = 0,max = 1000,value = 5, step = 5),
                                    
                                    #this text output show what the proportion of free throws made is for their player 
-                                   textOutput("text2"),
+                                   textOutput("text2NBA"),
                                    
                                    #Conditional using checkbox if they want to see the true population proportion is for their player
-                                   checkboxInput("true", h6("Show the true free throw percentage")),
-                                   conditionalPanel("input.true==true",
-                                                    textOutput("text1")
+                                   checkboxInput("trueNBA", h6("Show the true free throw percentage")),
+                                   conditionalPanel("input.trueNBA==true",
+                                                    textOutput("text1NBA")
                                    ),
+                                   checkboxInput("iftestNBA",h6("Show Test Output")),
+                                   conditionalPanel("input.iftestNBA==true",
+                                                    tableOutput("testtableNBA")
+                                   )
+                                   
                                    #include an image
-                                   img(src = "fthrow.png", height = 150, width =100)
-
-                              
+                                   #img(src = "fthrow.png", height = 150, width =100)
+                                   
+                                   
+                                   
                             ),
                             
                             column(8,
-                                   #Conditionally select what to output based on what the user wants to show
-                                   #There is a better way to do this that I have specified in the server file
-                                   conditionalPanel("input.true==false",
-                                                    plotOutput("proportion")
-                                                    ),
-                                   conditionalPanel("input.true==true",
-                                                    plotOutput("proportion2")
-                                                    ),
-                                   
+                                   plotOutput("proportion2NBA"),
+                                   bsPopover(id = "proportion2NBA", title = NULL, content = "The red line shows the proportion from the null hypothesis, the green line shows the sample proporiton and the blue line shows the players actual proportion from the season", placement = "left", trigger = "hover",
+                                             options = NULL)
                                    #Output some info about the graphs and the conditional part
-                                   h4("The red line shows the proportion from the null hypothesis"),
-                                   h4("The green line shows the sample proportion"),
-                                   conditionalPanel("input.true==true",
-                                                    h4("The blue line shows the players actual free throw proportion from the 2016-17 season")
-                                                    )
-
-                                   )
+                                   # h4("The red line shows the proportion from the null hypothesis"),
+                                   # h4("The green line shows the sample proportion"),
+                                   # conditionalPanel("input.true==true",
+                                   #                  h4("The blue line shows the players actual free throw proportion from the 2016-17 season")
+                                   # )
+                                   
+                                   
+                            )
                             
                             
                           )
-                          
                           ),
                   
                   
-                  #The third tab just shows all of the data that I used
-                  tabItem(tabName = "third",
+                  #The fourth tab just shows all of the data that I used
+                  tabItem(tabName = "fourth",
                           fluidRow(
                             
                             column(6,

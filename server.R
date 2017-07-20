@@ -1,4 +1,4 @@
-
+library(ggplot2)
 
 library(shiny)
 
@@ -8,29 +8,26 @@ playerdata<-read.csv("NBA1617E.csv",header=TRUE)
 
 shinyServer(function(input, output,session) {
   
-  #This is a reactive element for filtering the data in part 1 for the histogram
   dataFilter<- reactive({
     
     games<-input$gamesplayed
-
+    
     gameindex<-which(((playerdata$G >= games[1])*(playerdata$G<=games[2]))==1)
     
     fta<-input$FTA1
     index<-which(((playerdata$FTA >= fta[1])*(playerdata$FTA<=fta[2]))==1)
     playerdata<-playerdata[index,]
     bballdata<-playerdata[gameindex,]
- 
+    
   })
   
-  #This is a reactive element for selecting a player based on the user's choices
-  # **Part of what can be modified to make plot function simpler
   player.select <-reactive({
     #Filter the player data so that it does not choose a player who has no free throw attempts => no free throw %
     index1 = which(((playerdata$FTA >= 1)*(playerdata$FTA<=1000))==1)
     playerdata2 = playerdata[index1,]
     
     #Randomly select a player if it is random
-    decision = input$howToChoose
+    decision = input$howToChooseNBA
     if(decision == "rand"){
       s1 = playerdata2[sample(nrow(playerdata2), 1), ]
       name = s1$Player
@@ -44,58 +41,55 @@ shinyServer(function(input, output,session) {
     namedata<-playerdata2[index,]
   })
   
+  
   #This is a reactive element for how many shots will be simulated
-  n <- reactive({
-    return(input$samp.size)
+  nNBA <- reactive({
+    return(input$samp.sizeNBA)
   })
   
   #This is a reactive element for what the user chooses for the null value
-  h <- reactive({
-    return(input$null.val)
-  })
-
-  #Output text for what the free throw percentage is for the player
-  output$text1 <- renderText({
-    namedata <-player.select()
-    ftp = namedata$FT/namedata$FTA
-
-    paste("The free throw proportion for ",namedata$Player, "is",ftp)
+  hNBA <- reactive({
+    return(input$null.valNBA)
   })
   
-  # Output text for the sample proportion
-  output$text2 <- renderText({
+  truepropNBA <-reactive({
+    return(input$trueNBA)
+  })
+  
+  valsNBA <- reactiveValues(sim1 = 0)
+  observeEvent(input$samp.sizeNBA, {
     namedata<-player.select()
     ftp = namedata$FT/namedata$FTA
-    n1 <-n()
-    phat = 0
-    #simulate the data based on number of shots the user selects and the players free throw percentage
-    sim1 = rbinom(n = n1,size = 1, prob = ftp)
-    #Find the sample proportion
-    for(i in 1:n1){
-      if(sim1[i]==1){
-        phat = phat+1
-      }
-      else{
-        phat = phat
-      }
-    }
-    phat = phat/n1
-    paste("The sample proportion of shots made is  ", phat)
+    n1 <-nNBA()
+    valsNBA$sim1 = rbinom(n = n1,size = 1, prob = ftp)
   })
+  
+  #Output text for what the free throw percentage is for the player
+  output$text1NBA <- renderText({
+    namedata <-player.select()
+    ftp = namedata$FT/namedata$FTA
+    
+    paste("The free throw proportion for ",namedata$Player, "is",round(ftp,2))
+  })
+  
+  
   
   #Output text for the null hypothesis
-  output$text3 <- renderText({
+  output$text3NBA <- renderText({
     namedata <-player.select()
-    h1 <- h()
-    paste("Test the hypothesis that the free throw percentage for ",namedata$Player, "is not equal to",h1)
+    h1 <- hNBA()
+    paste("Test the hypothesis that the free throw percentage for ",namedata$Player, "is equal to",h1)
     
     
   })
-  
-  #Output the histogram in Part 1 
-  output$histogram<-renderPlot({
+  output$histogramNBA<-renderPlot({
+    validate(
+      need(input$gamesplayed>0,
+           message = "Please input a valid number of games played")
+    )
+    
     bballdata<-dataFilter()
-   
+    
     n = nrow(bballdata)
     y = numeric(length = n)
     
@@ -107,23 +101,31 @@ shinyServer(function(input, output,session) {
       
       y[i] = bballdata$FT[i]/bballdata$FTA[i]
     }
-
+    
     #The actual histogram
-    hist(y,xlab = "Free Throw Proportion",main = "Histogram of Free Throw Proportion")
+    par(bg = "lightsteelblue")
+    hist(y,xlab = "Free Throw Proportion",main = "Histogram of Free Throw Proportion",col ="firebrick")
   })
-
-
-  
-  #output the plot for the proportion of free throws made
-  output$proportion <-renderPlot({
-    h2 <-h()
+  output$proportion2NBA <-renderPlot({
+    validate(
+      need(input$samp.sizeNBA>0,
+           message = "Please input a valid number of shots")
+    )
+    validate(
+      need(!is.null(input$samp.sizeNBA),
+           message = "Please input the number of shots")
+    )
+    h3<-hNBA()
     namedata<-player.select()
     ftp = namedata$FT/namedata$FTA
-    n1 <-n()
+    n1 <-nNBA()
+    true1 = truepropNBA()
     phat = 0
-    #simulate the data based on number of shots the user selects and the players free throw percentage
-    sim1 = rbinom(n = n1,size = 1, prob = ftp)
+    
+    sim1 = valsNBA$sim1
+    
     #Find the sample proportion
+    
     for(i in 1:n1){
       if(sim1[i]==1){
         phat = phat+1
@@ -134,74 +136,90 @@ shinyServer(function(input, output,session) {
     }
     phat = phat/n1
     #Plot it
+    par(bg = "lightsteelblue")
     plot(x=NULL,
          y=NULL,
          xlim=c(0, 1),
          ylim=c(0, 1),
-         ylab = "Proportion",
-         xlab = "",
-         xaxt = "n"
+         ylab = paste("Proportion"),
+         xlab =  paste("The sample proportion of shots made is  ", round(phat, digits = 2)),
+         xaxt = "n",
+         main = paste("Free Throw Proportion for ",namedata$Player)
     )
-    abline(h = h2, col = "red", lwd = 3)
-    abline(h = phat, col = "green", lwd = 3)
-
-  })
-  #
-  #
-  #     v
-  #     v
-  #     v
-  #     v
-  #
-  # PLOT for conditional panel
-  # A more efficient way to handle this would have been to create a reactive element for the checkbox and then use an if statement in the first plot function
-  #
-  #     ^
-  #     ^
-  #     ^
-  #     ^
-  #
-  #
-  output$proportion2 <-renderPlot({
-    h3<-h()
-    namedata<-player.select()
-    ftp = namedata$FT/namedata$FTA
-    n1 <-n()
-    phat = 0
-    #simulate the data based on number of shots the user selects and the players free throw percentage
-    sim1 = rbinom(n = n1,size = 1, prob = ftp)
-    #Find the sample proportion
-    for(i in 1:n1){
-      if(sim1[i]==1){
-        phat = phat+1
-      }
-      else{
-        phat = phat
-      }
-    }
-    phat = phat/n1
-    #Plot it
-    plot(x=NULL,
-         y=NULL,
-         xlim=c(0, 1),
-         ylim=c(0, 1),
-         ylab = "Proportion",
-         xlab = "",
-         xaxt = "n"
-    )
-
+    
     abline(h = h3, col = "red", lwd = 3)
     abline(h = phat, col = "green", lwd = 3)
-    abline(h=ftp,col = "blue", lwd =3)
+    if(true1 == TRUE){
+      abline(h=ftp,col = "blue", lwd =3)
+    }
+    # x1 = 0:1
+    # y1 = 0:1
+    # ggplot(data.frame(x1,y1),aes(x=x1, y=y1))+
+    #   geom_line(y = h3, color = "red") +
+    #   geom_line(y = phat, color = "green")+
+    #   ylim(0,1) +
+    #   labs(title = paste("Free Throw Proportion for ",namedata$Player),y = "Proportion", x = " ", caption = paste("The sample proportion of shots made is  ", round(phat, digits = 2)))+
+    #   if(true1 == TRUE){
+    #     geom_line(y = ftp, color = "blue")
+    #   }
+    
     
   })
   
-  #Output the table of data. It is called a sample table but note that it is not a sample and is actually the entire population of NBA players in the 2016-17 season
+  output$testtableNBA <- renderTable({
+    validate(
+      need(input$samp.sizeNBA>0,
+           message = "Please input a valid number of shots")
+    )
+    
+    namedata <-player.select()
+    h1 <- hNBA()
+    ftp = namedata$FT/namedata$FTA
+    sim1 = valsNBA$sim1
+    n4 = nNBA()
+    phat = 0
+    
+    for(i in 1:n4){
+      if(sim1[i]==1){
+        phat = phat+1
+      }
+      else{
+        phat = phat
+      }
+    }
+    phat = phat/n4
+    
+    
+    # 0.14186
+    stanerr1 = sqrt(h1*(1-h1)/n4)
+    
+    z1 = ( phat- h1)/stanerr1
+    z1 = round(z1, digits = 3)
+    #paste(round(z1,digits = 3))
+    
+    if(phat<h1)
+    {
+      p1 = pnorm(z1,lower.tail = TRUE) 
+      
+    }
+    else{
+      p1 = pnorm(z1,lower.tail = FALSE) 
+      
+    }
+    
+    if(input$iftestNBA)
+    {
+      ctable = matrix(c(z1,p1),nrow=1)
+      colnames(ctable) = c("z-statistic","p-value")
+      ctable
+    }
+  })
+  
   output$samp.table<- renderTable({
-
+    
     sample1 <- playerdata
     
   })
-  
+
 })
 

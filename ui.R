@@ -1,6 +1,7 @@
 library(shiny)
 library(shinydashboard)
-
+library(shinyBS)
+library(shinyjs)
 
 #read in the data set
 playerdata<-read.csv("NBA1617E.csv",header=TRUE)

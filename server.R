@@ -1,7 +1,7 @@
 library(ggplot2)
-
+library(shinyBS)
 library(shiny)
-
+library(shinyjs)
 
 playerdata<-read.csv("NBA1617E.csv",header=TRUE)
 
